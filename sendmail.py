@@ -6,9 +6,10 @@ arXiv 논문 메일 발송 모듈.
 Input  : summary.py 가 채운 JSON 파일
 Output : Gmail BCC 발송
 
-테이블 구조:
-    | 제목 | Link | Keywords |
-    | Summary (colspan=3)  |
+테이블 구조 (컬럼 비율 #:3% / Title:93% / Link:4%):
+    행 1: [번호 rowspan=3] | Title             | [Link rowspan=2]
+    행 2:                  | Keywords           |
+    행 3:                  | Summary (colspan=2)|
 """
 
 from __future__ import annotations
@@ -41,10 +42,6 @@ EMAIL_FOOTER = (
 
 # ── 헬퍼 ──────────────────────────────────────────────────────────────────────
 
-def _default_json_path(date_str: str, category: str = CATEGORY) -> Path:
-    return Path(f"arxiv_{category.replace('.', '_')}_{date_str}.json")
-
-
 def _default_subject(date_str: str, category: str = CATEGORY) -> str:
     return f"[standingjuno.openclaw] {date_str} Daily arXiv {category} listing"
 
@@ -55,56 +52,84 @@ def build_html_body(papers: list[dict]) -> str:
     """
     논문 리스트를 HTML 이메일 본문으로 변환합니다.
 
-    각 논문은 두 행으로 표시됩니다:
-        행 1: 제목 | Link | Keywords
-        행 2: Summary (전체 너비)
+    논문 1개당 3행 구조 (컬럼 비율 #:3% / Title:93% / Link:4%):
+        행 1: [번호 rowspan=3] | Title             | [Link rowspan=2]
+        행 2:                  | Keywords           |
+        행 3:                  | Summary (colspan=2)|
     """
-    table_style = (
-        'border="1" cellpadding="8" cellspacing="0" '
+    TABLE = (
+        'border="1" cellpadding="0" cellspacing="0" width="100%" '
         'style="border-collapse:collapse;font-family:sans-serif;'
-        'font-size:14px;width:100%"'
+        'font-size:14px;width:100%;table-layout:fixed"'
     )
-    th_style = 'style="background:#f2f2f2;text-align:left;padding:8px"'
-    td_style = 'style="vertical-align:top;padding:8px"'
-    summary_style = (
-        'style="vertical-align:top;padding:8px;color:#444;'
-        'font-size:13px;background:#fafafa;font-style:italic"'
+    COLGROUP = (
+        '<colgroup>'
+        '<col width="3%">'
+        '<col width="93%">'
+        '<col width="4%">'
+        '</colgroup>'
     )
 
+    # ── 헤더 스타일 ───────────────────────────────────────────────────────────
+    TH_BASE = 'background:#f2f2f2;padding:6px;'
+    TH_NUM  = f'width="3%"  style="{TH_BASE}text-align:center;font-size:11px"'
+    TH_BODY = f'width="93%" style="{TH_BASE}text-align:left"'
+    TH_LINK = f'width="4%"  style="{TH_BASE}text-align:center;font-size:11px"'
+
+    # ── 셀 스타일 ─────────────────────────────────────────────────────────────
+    TD_NUM     = ('width="3%"  style="width:3%;vertical-align:middle;'
+                  'text-align:center;padding:6px;font-size:11px;color:#aaa"')
+    TD_TITLE   = ('width="93%" style="width:93%;vertical-align:middle;'
+                  'padding:8px 8px 3px 8px;font-weight:bold"')
+    TD_KW      = ('width="93%" style="width:93%;vertical-align:middle;'
+                  'padding:3px 8px 8px 8px;color:#555;font-size:13px"')
+    TD_LINK    = ('width="4%"  style="width:4%;vertical-align:middle;'
+                  'text-align:center;padding:6px"')
+    TD_SUMMARY = ('style="vertical-align:top;padding:8px 8px 14px 8px;'
+                  'color:#444;font-size:13px;background:#fafafa;font-style:italic"')
+
     thead = (
-        f"<thead><tr>"
-        f"<th {th_style}>Title</th>"
-        f"<th {th_style}>Link</th>"
-        f"<th {th_style}>Keywords</th>"
-        f"</tr></thead>"
+        f'<thead><tr>'
+        f'<th {TH_NUM}>#</th>'
+        f'<th {TH_BODY}>Title / Keywords</th>'
+        f'<th {TH_LINK}>Link</th>'
+        f'</tr></thead>'
     )
 
     rows: list[str] = []
-    for paper in papers:
+    for i, paper in enumerate(papers, start=1):
         title    = html.escape(str(paper.get('title',    '')).strip())
-        link     = html.escape(str(paper.get('link',     '')).strip())
+        link_raw =             str(paper.get('link',     '')).strip()
+        link_h   = html.escape(link_raw)
         keywords = html.escape(str(paper.get('keywords', '')).strip())
         summary  = html.escape(str(paper.get('summary',  '')).strip())
 
-        link_cell = f'<a href="{link}">link</a>' if link else ''
+        link_cell = (f'<a href="{link_h}" style="font-size:12px;text-decoration:none">Link</a>'
+                     if link_raw else '')
 
-        # 행 1: 제목 | Link | Keywords
+        # 행 1: 번호(rowspan=3) | Title | Link(rowspan=2)
         rows.append(
-            f"<tr>"
-            f"<td {td_style}>{title}</td>"
-            f"<td {td_style}>{link_cell}</td>"
-            f"<td {td_style}>{keywords}</td>"
-            f"</tr>"
+            f'<tr>'
+            f'<td rowspan="3" {TD_NUM}>{i}</td>'
+            f'<td {TD_TITLE}>{title}</td>'
+            f'<td rowspan="2" {TD_LINK}>{link_cell}</td>'
+            f'</tr>'
         )
-        # 행 2: Summary (전체 너비)
+        # 행 2: Keywords  (# 와 Link 는 rowspan 으로 이미 차지)
         rows.append(
-            f"<tr>"
-            f"<td colspan='3' {summary_style}>{summary}</td>"
-            f"</tr>"
+            f'<tr>'
+            f'<td {TD_KW}>🏷 {keywords}</td>'
+            f'</tr>'
+        )
+        # 행 3: Summary  (# 는 rowspan, Title+Link 자리를 colspan=2 로)
+        rows.append(
+            f'<tr>'
+            f'<td colspan="2" {TD_SUMMARY}>💬 {summary}</td>'
+            f'</tr>'
         )
 
     tbody  = "<tbody>" + "".join(rows) + "</tbody>"
-    table  = f"<table {table_style}>{thead}{tbody}</table>"
+    table  = f"<table {TABLE}>{COLGROUP}{thead}{tbody}</table>"
     footer = html.escape(EMAIL_FOOTER).replace("\n", "<br>")
 
     return (
