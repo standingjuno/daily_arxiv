@@ -1,0 +1,15 @@
+.env
+
+output/
+*.json
+*.xlsx
+ 
+logs/
+*.log
+ 
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
