@@ -15,6 +15,8 @@ main.py
 pip install -r requirements.txt
 ```
 
+---
+
 Also, to run this repository, you need to create a .env file with following settings: 
 
 (OPENAI_API_KEY, OPENAI_MODEL, GMAIL_USER, GMAIL_APP_PASSWORD, ARXIV_CATEGORY, ARXIV_MAX_RESULTS, EMAIL_RECIPIENTS, OUTPUT_DIR, DEBUG).
