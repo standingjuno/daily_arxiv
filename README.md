@@ -2,10 +2,16 @@
 
 main.py
 
-⌙ config.py
+⌙ config.py (module)
 
-⌙ search.py
+⌙ search.py (module)
 
-⌙ summary.py
+⌙ summary.py (module)
 
-⌙ sendmail.py
+⌙ sendmail.py (module)
+
+
+### Install dependency
+```
+pip install -r requirements.txt
+```
