@@ -36,14 +36,13 @@ EMAIL_FOOTER = (
     "Good ideas and suggestions are welcome as well.\n\n"
     "Have a great day.\n"
     "Thank you.\n\n"
-    "Juno Sun (standingjuno@gmail.com)"
 )
 
 
 # ── 헬퍼 ──────────────────────────────────────────────────────────────────────
 
 def _default_subject(date_str: str, category: str = CATEGORY) -> str:
-    return f"[standingjuno.openclaw] {date_str} Daily arXiv {category} listing"
+    return f"{date_str} Daily arXiv {category} listing"
 
 
 # ── HTML 생성 ─────────────────────────────────────────────────────────────────
